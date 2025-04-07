@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Container,
@@ -12,172 +12,226 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Divider,
-  CircularProgress,
-  Alert
+  Divider
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
-import { useAuth } from '../components/auth/AuthProvider';
-import { supabase } from '../lib/supabaseClient';
+import { useNavigate } from 'react-router-dom';
+import { getCurrentUser } from '../utils/userStorage';
+import { toast } from 'react-hot-toast';
 
 const PricingPage = () => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const user = getCurrentUser();
+  const navigate = useNavigate();
   
-  const handleSubscribe = async (priceId) => {
-    if (!user) return;
-    
-    setLoading(true);
-    setError('');
-    
-    try {
-      // In a real app, you'd call your backend to create a Stripe checkout session
-      // For demo purposes, we'll simulate it
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId,
-          userId: user.id,
-          customerEmail: user.email
-        }),
+  const handleSubscribe = () => {
+    if (!user) {
+      // Redirect to signup with return destination
+      navigate('/signup', { 
+        state: { 
+          from: { pathname: '/payment' }
+        } 
       });
-      
-      const { url } = await response.json();
-      
-      // Redirect to Stripe Checkout
-      window.location.href = url;
-    } catch (err) {
-      console.error('Error creating checkout session:', err);
-      setError('Failed to process your request. Please try again.');
-    } finally {
-      setLoading(false);
+      toast.success('Create an account to continue with your purchase');
+      return;
     }
+    
+    // User is logged in, redirect to payment page
+    navigate('/payment');
   };
-  
-  const plans = [
-    {
-      name: 'Free',
-      price: '$0',
-      description: 'Perfect for trying out the service',
-      features: [
-        '5 AI-enhanced testimonials',
-        'Client verification',
-        'Basic editing tools',
-        'Email support'
-      ],
-      buttonText: 'Current Plan',
-      buttonVariant: 'outlined',
-      priceId: 'free'
-    },
-    {
-      name: 'Pro',
-      price: '$19',
-      period: '/month',
-      description: 'For growing businesses',
-      features: [
-        'Unlimited testimonials',
-        'Advanced AI enhancements',
-        'Custom branding',
-        'Priority support',
-        'Analytics dashboard'
-      ],
-      buttonText: 'Subscribe',
-      buttonVariant: 'contained',
-      priceId: 'price_1234567890'
-    },
-    {
-      name: 'Business',
-      price: '$49',
-      period: '/month',
-      description: 'For teams and agencies',
-      features: [
-        'Everything in Pro',
-        'Team collaboration',
-        'API access',
-        'White-label options',
-        'Dedicated account manager'
-      ],
-      buttonText: 'Subscribe',
-      buttonVariant: 'contained',
-      priceId: 'price_0987654321'
-    }
-  ];
   
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 8 }}>
-        <Typography variant="h3" align="center" gutterBottom>
-          Choose Your Plan
-        </Typography>
-        <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 6 }}>
-          Upgrade to unlock unlimited testimonials and premium features
+        <Typography 
+          variant="h3" 
+          align="center" 
+          gutterBottom
+          sx={{ fontWeight: 700 }}
+        >
+          Simple Pricing
         </Typography>
         
-        {error && <Alert severity="error" sx={{ mb: 4 }}>{error}</Alert>}
+        <Typography 
+          variant="h6" 
+          align="center" 
+          color="text.secondary"
+          sx={{ mb: 6, maxWidth: 700, mx: 'auto' }}
+        >
+          Get started for free or upgrade to premium for unlimited access.
+        </Typography>
         
         <Grid container spacing={4} justifyContent="center">
-          {plans.map((plan) => (
-            <Grid item key={plan.name} xs={12} sm={6} md={4}>
-              <Card 
+          {/* Free Plan */}
+          <Grid item xs={12} md={4}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                borderRadius: 3,
+                border: '1px solid rgba(0, 0, 0, 0.08)'
+              }}
+            >
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                <Typography variant="h5" component="h2" gutterBottom>
+                  Free
+                </Typography>
+                
+                <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 2 }}>
+                  <Typography variant="h3" component="span">
+                    $0
+                  </Typography>
+                </Box>
+                
+                <Typography color="text.secondary" sx={{ mb: 3 }}>
+                  Perfect for getting started
+                </Typography>
+                
+                <Divider sx={{ my: 2 }} />
+                
+                <List>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="5 AI-enhanced testimonials" />
+                  </ListItem>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Basic exports (text)" />
+                  </ListItem>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Standard support" />
+                  </ListItem>
+                </List>
+              </CardContent>
+              
+              <CardActions sx={{ p: 3, pt: 0 }}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => navigate('/signup')}
+                >
+                  Get Started
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          
+          {/* Premium Plan */}
+          <Grid item xs={12} md={4}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                borderRadius: 3,
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                bgcolor: 'primary.50',
+                position: 'relative',
+                overflow: 'visible'
+              }}
+            >
+              <Box 
                 sx={{ 
-                  height: '100%', 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  ...(plan.name === 'Pro' ? {
-                    border: '2px solid',
-                    borderColor: 'primary.main'
-                  } : {})
+                  position: 'absolute', 
+                  top: -12, 
+                  left: '50%', 
+                  transform: 'translateX(-50%)',
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  py: 0.5,
+                  px: 2,
+                  borderRadius: 5,
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1
                 }}
-                elevation={plan.name === 'Pro' ? 4 : 1}
               >
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="h5" component="h2" gutterBottom>
-                    {plan.name}
+                Most Popular
+              </Box>
+              
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                <Typography variant="h5" component="h2" gutterBottom>
+                  Premium
+                </Typography>
+                
+                <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 2 }}>
+                  <Typography variant="h3" component="span">
+                    $49
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 2 }}>
-                    <Typography variant="h3" component="span">
-                      {plan.price}
-                    </Typography>
-                    {plan.period && (
-                      <Typography variant="subtitle1" color="text.secondary" component="span">
-                        {plan.period}
-                      </Typography>
-                    )}
-                  </Box>
-                  <Typography variant="subtitle1" color="text.secondary" paragraph>
-                    {plan.description}
+                  <Typography variant="subtitle1" color="text.secondary" component="span">
+                    one-time
                   </Typography>
-                  <Divider sx={{ my: 2 }} />
-                  <List dense>
-                    {plan.features.map((feature) => (
-                      <ListItem key={feature} disableGutters>
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <CheckIcon color="primary" />
-                        </ListItemIcon>
-                        <ListItemText primary={feature} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </CardContent>
-                <CardActions sx={{ p: 2 }}>
-                  <Button
-                    fullWidth
-                    variant={plan.buttonVariant}
-                    color="primary"
-                    disabled={loading || plan.name === 'Free'}
-                    onClick={() => handleSubscribe(plan.priceId)}
-                  >
-                    {loading ? <CircularProgress size={24} /> : plan.buttonText}
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
+                </Box>
+                
+                <Typography color="text.secondary" sx={{ mb: 3 }}>
+                  Lifetime access to premium features
+                </Typography>
+                
+                <Divider sx={{ my: 2 }} />
+                
+                <List>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Unlimited AI-enhanced testimonials" />
+                  </ListItem>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="One-click client approval" />
+                  </ListItem>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Advanced exports (PDF, HTML, JSON)" />
+                  </ListItem>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Custom brand tone" />
+                  </ListItem>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Remove Testy branding" />
+                  </ListItem>
+                  <ListItem disableGutters>
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CheckIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary="Priority support" />
+                  </ListItem>
+                </List>
+              </CardContent>
+              
+              <CardActions sx={{ p: 3, pt: 0 }}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubscribe}
+                >
+                  Upgrade Now
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
         </Grid>
       </Box>
     </Container>

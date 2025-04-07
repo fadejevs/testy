@@ -19,25 +19,40 @@ import {
   TableRow,
   IconButton,
   Tooltip,
-  LinearProgress
+  LinearProgress,
+  Divider,
+  Menu,
+  MenuItem
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import CancelIcon from '@mui/icons-material/Cancel';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuth } from '../components/auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
+import { getCurrentUser, clearCurrentUser, clearAllUsers } from '../utils/userStorage';
+import UserSubscriptionStatus from '../components/user/UserSubscriptionStatus';
+import { toast } from 'react-hot-toast';
 
 const DashboardPage = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [testimonials, setTestimonials] = useState([]);
   const [userLimits, setUserLimits] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Get current user
+    const currentUser = getCurrentUser();
+    setUser(currentUser);
+    setLoading(false);
+  }, []);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -67,8 +82,6 @@ const DashboardPage = () => {
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load your data. Please refresh the page.');
-      } finally {
-        setLoading(false);
       }
     };
     
@@ -93,11 +106,62 @@ const DashboardPage = () => {
     }
   };
   
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  
+  const handleLogout = () => {
+    clearCurrentUser();
+    toast.success('Logged out successfully');
+    navigate('/');
+  };
+  
+  const handleClearAllUsers = () => {
+    if (window.confirm('Are you sure you want to clear all users? This is for testing only.')) {
+      clearAllUsers();
+      toast.success('All users cleared');
+      navigate('/');
+    }
+  };
+  
   if (loading) {
     return (
-      <Container maxWidth="lg">
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
+  if (!user) {
+    return (
+      <Container maxWidth="sm">
         <Box sx={{ py: 8, textAlign: 'center' }}>
-          <CircularProgress />
+          <Typography variant="h4" gutterBottom>
+            Please Sign In
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            You need to be signed in to view your dashboard
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            component={RouterLink}
+            to="/login"
+            sx={{ mr: 2 }}
+          >
+            Sign In
+          </Button>
+          <Button
+            variant="outlined"
+            component={RouterLink}
+            to="/signup"
+          >
+            Sign Up
+          </Button>
         </Box>
       </Container>
     );
@@ -106,128 +170,80 @@ const DashboardPage = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Typography variant="h4">
+            Welcome, {user.email.split('@')[0]}
+          </Typography>
+          
+          <IconButton onClick={handleMenuOpen}>
+            <AccountCircleIcon fontSize="large" />
+          </IconButton>
+          
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            <MenuItem onClick={handleClearAllUsers}>Clear All Users (Testing)</MenuItem>
+          </Menu>
+        </Box>
+        
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          Manage your testimonials and account settings
+        </Typography>
+        
         <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
-            <Typography variant="h4" gutterBottom>
-              Your Testimonials
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-              Manage and track all your enhanced testimonials
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, alignItems: 'center' }}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => navigate('/enhance')}
-              disabled={userLimits && userLimits.testimonials_used >= userLimits.testimonials_limit}
-            >
-              New Testimonial
-            </Button>
-          </Grid>
-        </Grid>
-        
-        {error && <Alert severity="error" sx={{ mb: 4 }}>{error}</Alert>}
-        {copySuccess && <Alert severity="success" sx={{ mb: 4 }}>{copySuccess}</Alert>}
-        
-        <Card sx={{ mb: 4 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Usage
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                {userLimits ? `${userLimits.testimonials_used} of ${userLimits.testimonials_limit} testimonials used` : 'Loading...'}
+          <Grid item xs={12} md={4}>
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid rgba(0, 0, 0, 0.08)' }}>
+              <Typography variant="h6" gutterBottom>
+                Account Overview
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {userLimits ? `${Math.round((userLimits.testimonials_used / userLimits.testimonials_limit) * 100)}%` : ''}
-              </Typography>
-            </Box>
-            <LinearProgress 
-              variant="determinate" 
-              value={userLimits ? (userLimits.testimonials_used / userLimits.testimonials_limit) * 100 : 0} 
-            />
-            
-            {userLimits && userLimits.testimonials_used >= userLimits.testimonials_limit && (
-              <Box sx={{ mt: 2 }}>
-                <Button 
-                  variant="contained" 
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <UserSubscriptionStatus />
+              
+              <Box sx={{ mt: 3 }}>
+                <Button
+                  variant="contained"
                   color="primary"
-                  onClick={() => navigate('/pricing')}
+                  component={RouterLink}
+                  to="/enhance"
+                  fullWidth
                 >
-                  Upgrade Plan
+                  Create New Testimonial
                 </Button>
               </Box>
-            )}
-          </CardContent>
-        </Card>
-        
-        {testimonials.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              No testimonials yet
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Create your first enhanced testimonial to get started
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => navigate('/enhance')}
-            >
-              Create Testimonial
-            </Button>
-          </Paper>
-        ) : (
-          <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Client</TableCell>
-                  <TableCell>Testimonial</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {testimonials.map((testimonial) => (
-                  <TableRow key={testimonial.id}>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="bold">
-                        {testimonial.client_name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {testimonial.client_company}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {testimonial.enhanced_testimonial}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusChip(testimonial.status)}
-                    </TableCell>
-                    <TableCell>
-                      {testimonial.status === 'pending' && (
-                        <Tooltip title="Copy verification link">
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleCopyLink(testimonial.verification_token)}
-                          >
-                            <ContentCopyIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} md={8}>
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid rgba(0, 0, 0, 0.08)' }}>
+              <Typography variant="h6" gutterBottom>
+                Your Testimonials
+              </Typography>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Box sx={{ py: 4, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  You haven't created any testimonials yet
+                </Typography>
+                
+                <Button
+                  variant="contained"
+                  color="primary"
+                  component={RouterLink}
+                  to="/enhance"
+                  sx={{ mt: 2 }}
+                >
+                  Create Your First Testimonial
+                </Button>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
       </Box>
     </Container>
   );

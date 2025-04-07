@@ -13,9 +13,9 @@ import {
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
-import { getUserByEmail, setCurrentUser } from '../utils/userStorage';
+import { createUser, setCurrentUser } from '../utils/userStorage';
 
-const LoginPage = () => {
+const QuickSignupPage = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,14 +38,8 @@ const LoginPage = () => {
     setLoading(true);
     
     try {
-      // Find user in our "database"
-      const user = getUserByEmail(email);
-      
-      if (!user) {
-        setError('No account found with this email. Please sign up.');
-        setLoading(false);
-        return;
-      }
+      // Create user in our "database"
+      const user = createUser(email);
       
       // Set as current user
       setCurrentUser(user);
@@ -55,13 +49,13 @@ const LoginPage = () => {
       localStorage.setItem('userEmail', email);
       
       // Show success message
-      toast.success('Logged in successfully!');
+      toast.success('Account created successfully!');
       
       // Redirect to the destination (payment page or dashboard)
       navigate(from.pathname, { replace: true });
     } catch (err) {
-      console.error('Error logging in:', err);
-      setError('Failed to log in. Please try again.');
+      console.error('Error creating account:', err);
+      setError('Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -72,11 +66,11 @@ const LoginPage = () => {
       <Box sx={{ py: 8 }}>
         <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid rgba(0, 0, 0, 0.08)' }}>
           <Typography variant="h4" align="center" gutterBottom>
-            Log In
+            Create Your Account
           </Typography>
           
           <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 4 }}>
-            Welcome back to Testy
+            Get started with Testy in seconds
           </Typography>
           
           {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -101,15 +95,15 @@ const LoginPage = () => {
               disabled={loading}
               sx={{ py: 1.5 }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Log In'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
             </Button>
           </Box>
           
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="body2">
-              Don't have an account?{' '}
-              <Link component={RouterLink} to="/signup" state={{ from }}>
-                Sign up
+              Already have an account?{' '}
+              <Link component={RouterLink} to="/login" state={{ from }}>
+                Log in
               </Link>
             </Typography>
           </Box>
@@ -119,4 +113,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage; 
+export default QuickSignupPage; 

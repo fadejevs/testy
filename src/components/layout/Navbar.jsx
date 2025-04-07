@@ -99,14 +99,6 @@ const Navbar = () => {
             <Box sx={{ flexGrow: 1, display: 'flex' }}>
               <Button 
                 component={RouterLink} 
-                to="/" 
-                color="inherit"
-                sx={{ mx: 1 }}
-              >
-                Home
-              </Button>
-              <Button 
-                component={RouterLink} 
                 to="/pricing" 
                 color="inherit"
                 sx={{ mx: 1 }}

@@ -14,7 +14,6 @@ const Navbar = () => (
     display: 'flex',
     gap: '20px'
   }}>
-    <Link to="/">Home</Link>
     <Link to="/login">Login</Link>
     <Link to="/test">Test</Link>
   </nav>
@@ -33,7 +32,6 @@ function App() {
     <BrowserRouter>
       <Layout>
         <Routes>
-          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/test" element={<Test />} />
         </Routes>
