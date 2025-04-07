@@ -5,7 +5,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'your_test_sec
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
@@ -98,6 +98,6 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 }); 
