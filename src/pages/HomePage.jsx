@@ -700,15 +700,15 @@ const HomePage = () => {
                   
                   <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 2 }}>
                     <Typography variant="h3" component="span">
-                      $49
+                      $19
                     </Typography>
                     <Typography variant="subtitle1" color="text.secondary" component="span">
-                      one-time
+                      /month
                     </Typography>
                   </Box>
                   
                   <Typography color="text.secondary" sx={{ mb: 3 }}>
-                    Lifetime access to premium features
+                    Get unlimited AI-enhanced testimonials
                   </Typography>
                   
                   <Divider sx={{ my: 2 }} />
@@ -718,7 +718,7 @@ const HomePage = () => {
                       <ListItemIcon sx={{ minWidth: 36 }}>
                         <CheckCircleIcon color="primary" />
                       </ListItemIcon>
-                      <ListItemText primary="Unlimited AI-enhanced testimonials" />
+                      <ListItemText primary="Unlimited testimonials" />
                     </ListItem>
                     <ListItem disableGutters>
                       <ListItemIcon sx={{ minWidth: 36 }}>

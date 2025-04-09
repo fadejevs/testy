@@ -1,316 +1,267 @@
 import React, { useState, useEffect } from 'react';
-import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
-import { HashLink } from 'react-router-hash-link';
 import {
   AppBar,
+  Box,
   Toolbar,
   Typography,
   Button,
-  Container,
-  Box,
   IconButton,
+  Container,
   Menu,
   MenuItem,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
   Avatar,
+  Divider,
+  ListItemIcon,
   useMediaQuery,
   useTheme
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import CloseIcon from '@mui/icons-material/Close';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import LoginIcon from '@mui/icons-material/Login';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import LogoutIcon from '@mui/icons-material/Logout';
+import StarIcon from '@mui/icons-material/Star'; // Using star icon for the logo
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { getCurrentUser, clearCurrentUser } from '../../utils/userStorage';
-import { toast } from 'react-hot-toast';
+import { supabase } from '../../utils/supabaseClient';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { user } = useAuth();
+  const [anchorElNav, setAnchorElNav] = useState(null);
+  const [anchorElUser, setAnchorElUser] = useState(null);
+  const [mobileMenuAnchorEl, setMobileMenuAnchorEl] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  
-  // Use a more direct approach to check login status
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('isLoggedIn'));
-  const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
-  
-  // Check login status on mount and when location changes
-  useEffect(() => {
-    const checkLoginStatus = () => {
-      const loggedIn = !!localStorage.getItem('isLoggedIn');
-      const email = localStorage.getItem('userEmail');
+  const navigate = useNavigate();
+
+  const handleOpenNavMenu = (event) => {
+    setAnchorElNav(event.currentTarget);
+  };
+
+  const handleOpenUserMenu = (event) => {
+    setAnchorElUser(event.currentTarget);
+  };
+
+  const handleCloseNavMenu = () => {
+    setAnchorElNav(null);
+  };
+
+  const handleCloseUserMenu = () => {
+    setAnchorElUser(null);
+  };
+
+  const handleMobileMenuOpen = (event) => {
+    setMobileMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMobileMenuClose = () => {
+    setMobileMenuAnchorEl(null);
+  };
+
+  // Direct logout function with debugging
+  const handleDirectLogout = async () => {
+    console.log("Navbar: Direct logout initiated");
+    try {
+      // Close all menus
+      handleCloseUserMenu();
+      handleMobileMenuClose();
       
-      console.log('Login status check:', { loggedIn, email });
+      // Clear all storage
+      localStorage.clear();
+      sessionStorage.clear();
       
-      setIsLoggedIn(loggedIn);
-      setUserEmail(email || '');
-    };
-    
-    // Check immediately
-    checkLoginStatus();
-    
-    // Set up an interval to check periodically
-    const interval = setInterval(checkLoginStatus, 1000);
-    
-    // Clean up interval on unmount
-    return () => clearInterval(interval);
-  }, [location.pathname]);
-  
-  const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-  
-  const handleUserMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  
-  const handleUserMenuClose = () => {
-    setAnchorEl(null);
-  };
-  
-  const handleLogout = () => {
-    clearCurrentUser();
-    setIsLoggedIn(false);
-    setUserEmail('');
-    handleUserMenuClose();
-    toast.success('Logged out successfully');
-    navigate('/');
-  };
-  
-  const handleLogin = () => {
-    navigate('/login');
-    if (isMobile) {
-      setDrawerOpen(false);
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Supabase signOut error:", error);
+      }
+      
+      console.log("Navbar: Signed out successfully, redirecting to /");
+      
+      // Force a complete page reload to the root URL using the most direct method
+      window.location.href = '/';
+      
+      // As a fallback, set a timeout to force reload if the redirect doesn't happen
+      setTimeout(() => {
+        console.log("Forcing hard reload after timeout");
+        window.location.replace('/');
+      }, 500);
+    } catch (error) {
+      console.error("Navbar: Logout failed:", error);
+      // Even if there's an error, still try to redirect
+      window.location.href = '/';
     }
   };
-  
-  const handleSignup = () => {
-    navigate('/signup');
-    if (isMobile) {
-      setDrawerOpen(false);
-    }
+
+  // Add a click handler to the menu item
+  const handleLogoutClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log("Logout menu item clicked");
+    handleDirectLogout();
   };
-  
-  const handleNavigation = (path) => {
-    navigate(path);
-    if (isMobile) {
-      setDrawerOpen(false);
-    }
-  };
-  
-  // Get first letter of email for avatar
-  const getInitial = (email) => {
-    return email ? email.charAt(0).toUpperCase() : 'U';
-  };
-  
-  // Debug - log current login state
-  console.log("Current login state:", { isLoggedIn, userEmail });
-  
-  const navItems = [
-    { label: 'Home', path: '/' },
-    { label: 'Pricing', path: '/pricing' },
-    ...(isLoggedIn ? [{ label: 'Dashboard', path: '/dashboard' }] : [])
-  ];
-  
-  const drawer = (
-    <Box sx={{ width: 250, p: 2 }} role="presentation">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" component={RouterLink} to="/" sx={{ textDecoration: 'none', color: 'inherit' }}>
-          <AutoAwesomeIcon sx={{ mr: 1, color: 'primary.main' }} />
-          Testy
-        </Typography>
-        <IconButton onClick={handleDrawerToggle}>
-          <CloseIcon />
-        </IconButton>
-      </Box>
-      
-      <Divider sx={{ mb: 2 }} />
-      
-      <List>
-        {navItems.map((item) => (
-          <ListItem 
-            button 
-            key={item.label} 
-            onClick={() => handleNavigation(item.path)}
-            sx={{ borderRadius: 1 }}
-          >
-            <ListItemText primary={item.label} />
-          </ListItem>
-        ))}
-      </List>
-      
-      <Divider sx={{ my: 2 }} />
-      
-      {isLoggedIn ? (
-        <Box>
-          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-              {getInitial(userEmail)}
-            </Avatar>
-            <Typography variant="body2" noWrap sx={{ maxWidth: 150 }}>
-              {userEmail}
-            </Typography>
-          </Box>
-          <Button 
-            fullWidth 
-            variant="outlined" 
-            color="primary" 
-            onClick={handleLogout}
-          >
-            Log Out
-          </Button>
-        </Box>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Button 
-            fullWidth 
-            variant="contained" 
-            color="primary" 
-            onClick={handleSignup}
-          >
-            Sign Up
-          </Button>
-          <Button 
-            fullWidth 
-            variant="outlined" 
-            color="primary" 
-            onClick={handleLogin}
-          >
-            Log In
-          </Button>
-        </Box>
-      )}
-    </Box>
-  );
-  
+
   return (
-    <AppBar position="sticky" color="default" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: '1px solid rgba(0, 0, 0, 0.08)' }}>
+    <AppBar position="static" color="default" elevation={1}>
       <Container maxWidth="lg">
-        <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
-          {/* Logo */}
-          <Typography 
-            variant="h6" 
-            component={RouterLink} 
-            to="/" 
-            sx={{ 
-              textDecoration: 'none', 
-              color: 'inherit',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            <AutoAwesomeIcon sx={{ mr: 1, color: 'primary.main' }} />
-            Testy
-          </Typography>
-          
+        <Toolbar disableGutters>
+          {/* Logo with Star Icon */}
+          <RouterLink to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+              <StarIcon sx={{ color: 'primary.main', mr: 1 }} />
+              <Typography
+                variant="h6"
+                noWrap
+                sx={{
+                  fontWeight: 700,
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  display: { xs: 'none', sm: 'block' }
+                }}
+              >
+                Testy
+              </Typography>
+            </Box>
+          </RouterLink>
+
           {/* Desktop Navigation */}
-          {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {navItems.map((item) => (
-                <Button 
-                  key={item.label}
-                  component={RouterLink}
-                  to={item.path}
-                  color="inherit"
-                  sx={{ mx: 1 }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Box>
-          )}
-          
-          {/* Auth Buttons or User Menu */}
-          {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {isLoggedIn ? (
-                <>
-                  <Button
-                    color="inherit"
-                    onClick={handleUserMenuOpen}
-                    startIcon={
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                        {getInitial(userEmail)}
-                      </Avatar>
-                    }
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {userEmail.split('@')[0]}
-                  </Button>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleUserMenuClose}
-                    anchorOrigin={{
-                      vertical: 'bottom',
-                      horizontal: 'right',
-                    }}
-                    transformOrigin={{
-                      vertical: 'top',
-                      horizontal: 'right',
-                    }}
-                  >
-                    <MenuItem onClick={() => {
-                      handleUserMenuClose();
-                      navigate('/dashboard');
-                    }}>
-                      Dashboard
-                    </MenuItem>
-                    <MenuItem onClick={handleLogout}>Log Out</MenuItem>
-                  </Menu>
-                </>
-              ) : (
-                <>
-                  <Button 
-                    color="inherit" 
-                    component={RouterLink} 
-                    to="/login"
-                    sx={{ mr: 1 }}
-                  >
-                    Log In
-                  </Button>
-                  <Button 
-                    variant="contained" 
-                    color="primary" 
-                    component={RouterLink} 
-                    to="/signup"
-                  >
-                    Sign Up
-                  </Button>
-                </>
-              )}
-            </Box>
-          )}
-          
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+            <Button
+              component={RouterLink}
+              to="/"
+              sx={{ my: 2, color: 'text.primary', display: 'block' }}
+            >
+              Home
+            </Button>
+            <Button
+              component={RouterLink}
+              to="/pricing"
+              sx={{ my: 2, color: 'text.primary', display: 'block' }}
+            >
+              Pricing
+            </Button>
+          </Box>
+
           {/* Mobile Menu Button */}
           {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
+            <Box sx={{ flexGrow: 1 }}>
+              <IconButton
+                size="large"
+                edge="start"
+                color="inherit"
+                aria-label="menu"
+                onClick={handleMobileMenuOpen}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Box>
+          )}
+
+          {/* Auth Button or User Menu */}
+          {!user ? (
+            <Button
+              variant="contained"
+              color="primary"
+              component={RouterLink}
+              to="/auth"
+              startIcon={<LoginIcon />}
             >
-              <MenuIcon />
-            </IconButton>
+              Login
+            </Button>
+          ) : (
+            <Box>
+              <IconButton
+                onClick={handleOpenUserMenu}
+                size="large"
+                edge="end"
+                aria-label="account menu"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                color="inherit"
+              >
+                <Avatar 
+                  alt={user.email} 
+                  src={user.user_metadata?.avatar_url || ''} 
+                  sx={{ width: 32, height: 32 }}
+                />
+              </IconButton>
+              <Menu
+                sx={{ mt: '45px' }}
+                id="menu-appbar"
+                anchorEl={anchorElUser}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorElUser)}
+                onClose={handleCloseUserMenu}
+              >
+                <MenuItem component={RouterLink} to="/dashboard" onClick={handleCloseUserMenu}>
+                  <ListItemIcon>
+                    <DashboardIcon fontSize="small" />
+                  </ListItemIcon>
+                  <Typography textAlign="center">Dashboard</Typography>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogoutClick}>
+                  <ListItemIcon>
+                    <LogoutIcon fontSize="small" />
+                  </ListItemIcon>
+                  <Typography textAlign="center">Logout</Typography>
+                </MenuItem>
+              </Menu>
+            </Box>
           )}
         </Toolbar>
       </Container>
-      
-      {/* Mobile Drawer */}
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={handleDrawerToggle}
+
+      {/* Mobile Menu */}
+      <Menu
+        anchorEl={mobileMenuAnchorEl}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        keepMounted
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        open={Boolean(mobileMenuAnchorEl)}
+        onClose={handleMobileMenuClose}
       >
-        {drawer}
-      </Drawer>
+        <MenuItem component={RouterLink} to="/" onClick={handleMobileMenuClose}>
+          Home
+        </MenuItem>
+        <MenuItem component={RouterLink} to="/pricing" onClick={handleMobileMenuClose}>
+          Pricing
+        </MenuItem>
+        {user && (
+          <MenuItem component={RouterLink} to="/dashboard" onClick={handleMobileMenuClose}>
+            Dashboard
+          </MenuItem>
+        )}
+        <Divider />
+        {user ? (
+          <MenuItem onClick={handleLogoutClick}>
+            <ListItemIcon>
+              <LogoutIcon fontSize="small" />
+            </ListItemIcon>
+            Logout
+          </MenuItem>
+        ) : (
+          <MenuItem component={RouterLink} to="/auth" onClick={handleMobileMenuClose}>
+            <ListItemIcon>
+              <LoginIcon fontSize="small" />
+            </ListItemIcon>
+            Login
+          </MenuItem>
+        )}
+      </Menu>
     </AppBar>
   );
 };

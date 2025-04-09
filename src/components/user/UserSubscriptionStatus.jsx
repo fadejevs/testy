@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -7,18 +7,12 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../../utils/userStorage';
+import { supabase } from '../../utils/supabaseClient';
+import { markUserAsPaid } from '../../utils/userStorage';
 
 const UserSubscriptionStatus = () => {
   const navigate = useNavigate();
   const user = getCurrentUser();
-  
-  if (!user) {
-    return null;
-  }
-  
-  const handleUpgrade = () => {
-    navigate('/payment');
-  };
   
   // Format date for display
   const formatDate = (dateString) => {
@@ -29,6 +23,42 @@ const UserSubscriptionStatus = () => {
       month: 'short', 
       day: 'numeric' 
     });
+  };
+  
+  // Move useEffect to the top of the component, before any conditional returns
+  useEffect(() => {
+    // Check if user is paid in Supabase
+    const checkUserStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('is_paid, testimonial_limit, payment_date')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) throw error;
+        
+        // Update local user data if needed
+        if (data.is_paid && !user.isPaid) {
+          markUserAsPaid(user.id);
+        }
+      } catch (err) {
+        console.error('Error checking user status:', err);
+      }
+    };
+    
+    checkUserStatus();
+  }, [user]);
+  
+  // Now we can have the conditional return
+  if (!user) {
+    return null;
+  }
+  
+  const handleUpgrade = () => {
+    navigate('/payment');
   };
   
   return (

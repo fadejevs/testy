@@ -1,18 +1,18 @@
 import React from 'react';
-import { Box, Typography, Container } from '@mui/material';
+import { Container, Typography, Box } from '@mui/material';
+import SupabaseTest from '../components/SupabaseTest';
+import DirectSignupTest from '../components/DirectSignupTest';
 
 const TestPage = () => {
-  console.log("TestPage rendering");
-  
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h4">
-          Test Page Loaded Successfully
+    <Container maxWidth="md">
+      <Box sx={{ py: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Supabase Integration Tests
         </Typography>
-        <Typography variant="body1" sx={{ mt: 2 }}>
-          If you can see this, routing is working correctly.
-        </Typography>
+        
+        <SupabaseTest />
+        <DirectSignupTest />
       </Box>
     </Container>
   );

@@ -24,68 +24,154 @@ import {
   Menu,
   MenuItem
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, Navigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import CancelIcon from '@mui/icons-material/Cancel';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import { useAuth } from '../components/auth/AuthProvider';
-import { supabase } from '../lib/supabaseClient';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../utils/supabaseClient';
 import { getCurrentUser, clearCurrentUser, clearAllUsers } from '../utils/userStorage';
 import UserSubscriptionStatus from '../components/user/UserSubscriptionStatus';
 import { toast } from 'react-hot-toast';
+import DebugPanel from '../components/debug/DebugPanel';
+import PremiumBadge from '../components/dashboard/PremiumBadge';
 
 const DashboardPage = () => {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [sessionUser, setSessionUser] = useState(null);
   const [testimonials, setTestimonials] = useState([]);
   const [userLimits, setUserLimits] = useState(null);
   const [error, setError] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
+  const [sessionChecking, setSessionChecking] = useState(true);
+  const [data, setData] = useState(null);
   
   useEffect(() => {
-    // Get current user
-    const currentUser = getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
-  }, []);
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-      
+    console.log("DashboardPage: Mounting component");
+    
+    const fetchDashboardData = async () => {
       try {
-        // Fetch testimonials
-        const { data: testimonialsData, error: testimonialsError } = await supabase
-          .from('testimonials')
+        console.log("DashboardPage: Checking session...");
+        
+        if (!user) {
+          console.log("DashboardPage: No user found in context");
+          setError("Please log in to view your dashboard");
+          setLoading(false);
+          return;
+        }
+        
+        console.log("DashboardPage: User found, fetching data for:", user.email);
+        
+        // Try to fetch user data from Supabase
+        const { data: userData, error: userError } = await supabase
+          .from('users')
           .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .eq('id', user.id)
+          .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors when no rows are found
         
-        if (testimonialsError) throw testimonialsError;
+        if (userError && userError.code !== 'PGRST116') {
+          // Handle errors other than "no rows found"
+          console.error("Error fetching user data:", userError);
+          throw userError;
+        }
         
-        // Fetch user limits
-        const { data: limitsData, error: limitsError } = await supabase
-          .from('user_limits')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+        if (!userData) {
+          console.log("User not found in database, creating user record");
+          
+          // Create a basic user profile
+          const newUserData = {
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            created_at: new Date().toISOString()
+          };
+          
+          // Insert the new user into the database
+          const { data: insertedUser, error: insertError } = await supabase
+            .from('users')
+            .insert([newUserData])
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error("Error creating user record:", insertError);
+            // Still show the dashboard with basic data even if insert fails
+            setData(newUserData);
+          } else {
+            console.log("Created new user record:", insertedUser);
+            setData(insertedUser);
+          }
+        } else {
+          console.log("DashboardPage: User data fetched:", userData);
+          setData(userData);
+        }
         
-        if (limitsError && limitsError.code !== 'PGRST116') throw limitsError;
-        
-        setTestimonials(testimonialsData || []);
-        setUserLimits(limitsData || { testimonials_used: 0, testimonials_limit: 5, plan: 'free' });
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load your data. Please refresh the page.');
+        console.error("Dashboard error:", err);
+        setError("Error loading dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+    
+    return () => {
+      console.log("DashboardPage: Unmounting component");
+    };
+  }, [user]);
+  
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      try {
+        if (!user) {
+          console.log("No user found, cannot fetch dashboard data");
+          if (isMounted) {
+            setError("Please log in to view your dashboard");
+            setLoading(false);
+          }
+          return;
+        }
+        
+        console.log("Fetching dashboard data for user:", user.email);
+        
+        // Simulate data fetching or fetch real data
+        // For now, let's just set some dummy data after a delay
+        setTimeout(() => {
+          if (isMounted) {
+            setData({
+              name: user.user_metadata?.full_name || user.email,
+              email: user.email,
+              // Add other data as needed
+            });
+            setLoading(false);
+          }
+        }, 1000);
+        
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        if (isMounted) {
+          setError("Failed to load dashboard data");
+          setLoading(false);
+        }
       }
     };
     
     fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
   
   const handleCopyLink = (token) => {
@@ -113,13 +199,7 @@ const DashboardPage = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
-  
-  const handleLogout = () => {
-    clearCurrentUser();
-    toast.success('Logged out successfully');
-    navigate('/');
-  };
-  
+
   const handleClearAllUsers = () => {
     if (window.confirm('Are you sure you want to clear all users? This is for testing only.')) {
       clearAllUsers();
@@ -128,40 +208,60 @@ const DashboardPage = () => {
     }
   };
   
+  const handleUpgradeClick = () => {
+    // If user is already authenticated, go directly to payment
+    if (user) {
+      // Option 1: Go to payment page
+      navigate('/payment');
+      
+      // Option 2 (alternative): Go directly to Stripe checkout
+      // window.location.href = 'https://buy.stripe.com/test_7sI7tk9Go6sa3Go8wA';
+    } else {
+      // This shouldn't happen in a protected route, but just in case
+      navigate('/signup', { 
+        state: { 
+          from: { pathname: '/payment' }
+        } 
+      });
+    }
+  };
+  
+  const handleDirectPayment = () => {
+    // Show loading toast
+    toast.loading('Preparing payment...', { id: 'payment-loading' });
+    
+    // Redirect directly to Stripe checkout
+    window.location.href = 'https://buy.stripe.com/test_7sI7tk9Go6sa3Go8wA';
+    
+    // Note: The toast will be dismissed when the page unloads
+  };
+  
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <CircularProgress />
-      </Box>
+      <Container maxWidth="lg">
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+          <CircularProgress size={60} sx={{ mb: 4 }} />
+          <Typography variant="h5" gutterBottom>
+            Loading dashboard...
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Please wait while we fetch your data.
+          </Typography>
+        </Box>
+      </Container>
     );
   }
   
-  if (!user) {
+  if (error) {
     return (
-      <Container maxWidth="sm">
-        <Box sx={{ py: 8, textAlign: 'center' }}>
-          <Typography variant="h4" gutterBottom>
-            Please Sign In
+      <Container maxWidth="lg">
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+          <Typography variant="h5" color="error" gutterBottom>
+            {error}
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            You need to be signed in to view your dashboard
+          <Typography variant="body1" color="text.secondary">
+            Please try refreshing the page or contact support.
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            component={RouterLink}
-            to="/login"
-            sx={{ mr: 2 }}
-          >
-            Sign In
-          </Button>
-          <Button
-            variant="outlined"
-            component={RouterLink}
-            to="/signup"
-          >
-            Sign Up
-          </Button>
         </Box>
       </Container>
     );
@@ -169,25 +269,12 @@ const DashboardPage = () => {
   
   return (
     <Container maxWidth="lg">
-      <Box sx={{ py: 8 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Typography variant="h4">
-            Welcome, {user.email.split('@')[0]}
-          </Typography>
-          
-          <IconButton onClick={handleMenuOpen}>
-            <AccountCircleIcon fontSize="large" />
-          </IconButton>
-          
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            <MenuItem onClick={handleClearAllUsers}>Clear All Users (Testing)</MenuItem>
-          </Menu>
-        </Box>
+      <Box sx={{ py: 4 }}>
+        {user && user.isPaid && <PremiumBadge user={user} />}
+        
+        <Typography variant="h4" gutterBottom>
+          Dashboard
+        </Typography>
         
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           Manage your testimonials and account settings
@@ -244,6 +331,16 @@ const DashboardPage = () => {
             </Paper>
           </Grid>
         </Grid>
+        
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<ShoppingCartIcon />}
+          onClick={handleDirectPayment}
+          sx={{ mt: 2 }}
+        >
+          Upgrade Account
+        </Button>
       </Box>
     </Container>
   );

@@ -1,6 +1,9 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabaseClient';
+// import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../utils/supabaseClient';
+import { toast } from 'react-hot-toast';
+import { Button } from '@mui/material';
 
 // Create context with default values
 const AuthContext = createContext({
@@ -80,17 +83,57 @@ export const AuthProvider = ({ children }) => {
     }
   };
   
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
-      // For development, clear localStorage
+      console.log("AuthProvider: Attempting to log out...");
+      
+      // Set loading state
+      setLoading(true);
+      
+      // Clear any local storage
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('paymentFlow');
       
-      await supabase.auth.signOut();
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Logout error:", error);
+        toast.error("Failed to log out. Please try again.");
+        throw error;
+      }
+      
+      // Update state
       setUser(null);
-      navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
+      
+      // Show success message
+      toast.success("Successfully logged out");
+      
+      // Force a full page reload to clear any cached state
+      window.location.href = '/auth';
+    } catch (err) {
+      console.error("Error during logout:", err);
+      toast.error("Error during logout");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleForceLogout = async () => {
+    try {
+      // Clear all storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Force reload
+      window.location.href = '/auth?forcedLogout=true';
+    } catch (err) {
+      console.error("Force logout error:", err);
     }
   };
   
@@ -98,7 +141,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     login,
-    logout
+    logout: handleLogout
   };
   
   console.log("AuthProvider rendering, user:", user);
@@ -106,6 +149,14 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
+      <Button 
+        variant="outlined" 
+        color="error" 
+        onClick={handleForceLogout}
+        sx={{ mt: 2 }}
+      >
+        Force Complete Logout
+      </Button>
     </AuthContext.Provider>
   );
 };

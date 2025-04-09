@@ -13,15 +13,16 @@ import {
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
-import { createUser, setCurrentUser } from '../utils/userStorage';
+import { supabase } from '../utils/supabaseClient';
 
 const QuickSignupPage = () => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { signup } = useAuth();
   
   // Get the redirect destination from location state
   const from = location.state?.from || { pathname: '/dashboard' };
@@ -35,18 +36,23 @@ const QuickSignupPage = () => {
       return;
     }
     
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      // Create user in our "database"
-      const user = createUser(email);
+      console.log('Attempting to sign up with:', { email });
       
-      // Set as current user
-      setCurrentUser(user);
+      // Log Supabase connection
+      console.log('Supabase URL:', process.env.REACT_APP_SUPABASE_URL);
+      console.log('Supabase connection:', !!supabase);
       
-      // Explicitly set login flags
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userEmail', email);
+      // Create user with Supabase
+      const user = await signup(email, password);
+      console.log('Signup successful, user:', user);
       
       // Show success message
       toast.success('Account created successfully!');
@@ -55,7 +61,8 @@ const QuickSignupPage = () => {
       navigate(from.pathname, { replace: true });
     } catch (err) {
       console.error('Error creating account:', err);
-      setError('Failed to create account. Please try again.');
+      setError(`Failed to create account: ${err.message || 'Unknown error'}`);
+      toast.error('Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -82,6 +89,16 @@ const QuickSignupPage = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+              sx={{ mb: 3 }}
+            />
+            
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
               sx={{ mb: 3 }}
             />

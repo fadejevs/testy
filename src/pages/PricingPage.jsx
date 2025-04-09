@@ -39,6 +39,40 @@ const PricingPage = () => {
     navigate('/payment');
   };
   
+  const pricingPlans = [
+    {
+      title: 'Free',
+      price: '$0',
+      period: '/month',
+      description: 'Basic features for individuals',
+      features: [
+        'Up to 5 testimonials',
+        'Basic AI enhancement',
+        'Standard exports',
+        'Email support'
+      ],
+      buttonText: 'Get Started',
+      buttonVariant: 'outlined'
+    },
+    {
+      title: 'Premium',
+      price: '$19',
+      period: '/month',
+      description: 'Everything you need for professional testimonials',
+      features: [
+        'Unlimited testimonials',
+        'Advanced AI enhancement',
+        'All export formats',
+        'Custom branding',
+        'Priority support',
+        'Client approval workflow'
+      ],
+      buttonText: 'Subscribe Now',
+      buttonVariant: 'contained',
+      highlighted: true
+    }
+  ];
+  
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 8 }}>
@@ -61,177 +95,63 @@ const PricingPage = () => {
         </Typography>
         
         <Grid container spacing={4} justifyContent="center">
-          {/* Free Plan */}
-          <Grid item xs={12} md={4}>
-            <Card 
-              elevation={0}
-              sx={{ 
-                height: '100%', 
-                display: 'flex', 
-                flexDirection: 'column',
-                borderRadius: 3,
-                border: '1px solid rgba(0, 0, 0, 0.08)'
-              }}
-            >
-              <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                <Typography variant="h5" component="h2" gutterBottom>
-                  Free
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 2 }}>
-                  <Typography variant="h3" component="span">
-                    $0
-                  </Typography>
-                </Box>
-                
-                <Typography color="text.secondary" sx={{ mb: 3 }}>
-                  Perfect for getting started
-                </Typography>
-                
-                <Divider sx={{ my: 2 }} />
-                
-                <List>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="5 AI-enhanced testimonials" />
-                  </ListItem>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="Basic exports (text)" />
-                  </ListItem>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="Standard support" />
-                  </ListItem>
-                </List>
-              </CardContent>
-              
-              <CardActions sx={{ p: 3, pt: 0 }}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => navigate('/signup')}
-                >
-                  Get Started
-                </Button>
-              </CardActions>
-            </Card>
-          </Grid>
-          
-          {/* Premium Plan */}
-          <Grid item xs={12} md={4}>
-            <Card 
-              elevation={0}
-              sx={{ 
-                height: '100%', 
-                display: 'flex', 
-                flexDirection: 'column',
-                borderRadius: 3,
-                border: '1px solid rgba(0, 0, 0, 0.08)',
-                bgcolor: 'primary.50',
-                position: 'relative',
-                overflow: 'visible'
-              }}
-            >
-              <Box 
+          {pricingPlans.map((plan, index) => (
+            <Grid item xs={12} md={4} key={index}>
+              <Card 
+                elevation={0}
                 sx={{ 
-                  position: 'absolute', 
-                  top: -12, 
-                  left: '50%', 
-                  transform: 'translateX(-50%)',
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  py: 0.5,
-                  px: 2,
-                  borderRadius: 5,
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
-                  textTransform: 'uppercase',
-                  letterSpacing: 1
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  borderRadius: 3,
+                  border: '1px solid rgba(0, 0, 0, 0.08)'
                 }}
               >
-                Most Popular
-              </Box>
-              
-              <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                <Typography variant="h5" component="h2" gutterBottom>
-                  Premium
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 2 }}>
-                  <Typography variant="h3" component="span">
-                    $49
+                <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                  <Typography variant="h5" component="h2" gutterBottom>
+                    {plan.title}
                   </Typography>
-                  <Typography variant="subtitle1" color="text.secondary" component="span">
-                    one-time
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 2 }}>
+                    <Typography variant="h3" component="span">
+                      {plan.price}
+                    </Typography>
+                    <Typography variant="subtitle1" color="text.secondary" component="span">
+                      {plan.period}
+                    </Typography>
+                  </Box>
+                  
+                  <Typography color="text.secondary" sx={{ mb: 3 }}>
+                    {plan.description}
                   </Typography>
-                </Box>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  <List>
+                    {plan.features.map((feature, featureIndex) => (
+                      <ListItem disableGutters key={featureIndex}>
+                        <ListItemIcon sx={{ minWidth: 36 }}>
+                          <CheckIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText primary={feature} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </CardContent>
                 
-                <Typography color="text.secondary" sx={{ mb: 3 }}>
-                  Lifetime access to premium features
-                </Typography>
-                
-                <Divider sx={{ my: 2 }} />
-                
-                <List>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="Unlimited AI-enhanced testimonials" />
-                  </ListItem>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="One-click client approval" />
-                  </ListItem>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="Advanced exports (PDF, HTML, JSON)" />
-                  </ListItem>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="Custom brand tone" />
-                  </ListItem>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="Remove Testy branding" />
-                  </ListItem>
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckIcon color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary="Priority support" />
-                  </ListItem>
-                </List>
-              </CardContent>
-              
-              <CardActions sx={{ p: 3, pt: 0 }}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSubscribe}
-                >
-                  Upgrade Now
-                </Button>
-              </CardActions>
-            </Card>
-          </Grid>
+                <CardActions sx={{ p: 3, pt: 0 }}>
+                  <Button
+                    fullWidth
+                    variant={plan.buttonVariant}
+                    color="primary"
+                    onClick={() => navigate('/signup')}
+                  >
+                    {plan.buttonText}
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
       </Box>
     </Container>

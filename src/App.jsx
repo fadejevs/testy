@@ -1,42 +1,26 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-
-// Simple components for testing
-const Home = () => <div style={{padding: 20}}><h1>Home Page</h1></div>;
-const Login = () => <div style={{padding: 20}}><h1>Login Page</h1></div>;
-const Test = () => <div style={{padding: 20}}><h1>Test Page</h1></div>;
-
-// Simple navbar
-const Navbar = () => (
-  <nav style={{
-    padding: '10px 20px',
-    background: '#f0f0f0',
-    display: 'flex',
-    gap: '20px'
-  }}>
-    <Link to="/login">Login</Link>
-    <Link to="/test">Test</Link>
-  </nav>
-);
-
-// Layout component
-const Layout = ({ children }) => (
-  <>
-    <Navbar />
-    {children}
-  </>
-);
+import { BrowserRouter as Router } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
+import AppRoutes from './routes/AppRoutes';
+import { AuthProvider } from './contexts/AuthContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
+  console.log("App rendering with theme:", theme);
+  
   return (
-    <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/test" element={<Test />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <Router>
+          <ToastContainer position="bottom-right" />
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

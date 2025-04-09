@@ -13,10 +13,11 @@ import {
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
-import { getUserByEmail, setCurrentUser } from '../utils/userStorage';
+import { supabase } from '../utils/supabaseClient';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -35,24 +36,40 @@ const LoginPage = () => {
       return;
     }
     
+    if (!password) {
+      setError('Please enter your password');
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      // Find user in our "database"
-      const user = getUserByEmail(email);
+      console.log('Attempting to log in with:', { email });
       
-      if (!user) {
-        setError('No account found with this email. Please sign up.');
-        setLoading(false);
-        return;
+      // First, check if the user exists in Supabase auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        
+        // Check if user exists but password is wrong
+        const { data: userCheck } = await supabase
+          .from('users')
+          .select('email')
+          .eq('email', email)
+          .single();
+          
+        if (userCheck) {
+          throw new Error('Incorrect password. Please try again.');
+        } else {
+          throw new Error('No account found with this email. Please sign up.');
+        }
       }
       
-      // Set as current user
-      setCurrentUser(user);
-      
-      // Explicitly set login flags
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userEmail', email);
+      console.log('Login successful, user:', authData.user);
       
       // Show success message
       toast.success('Logged in successfully!');
@@ -61,7 +78,8 @@ const LoginPage = () => {
       navigate(from.pathname, { replace: true });
     } catch (err) {
       console.error('Error logging in:', err);
-      setError('Failed to log in. Please try again.');
+      setError(err.message || 'Failed to log in. Please try again.');
+      toast.error('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -88,6 +106,16 @@ const LoginPage = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+              sx={{ mb: 3 }}
+            />
+            
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
               sx={{ mb: 3 }}
             />

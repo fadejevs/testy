@@ -19,7 +19,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useAuth } from '../components/auth/AuthProvider';
-import { supabase } from '../lib/supabaseClient';
+// import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../utils/supabaseClient';
 import { enhanceTestimonial } from '../services/openaiService';
 import { v4 as uuidv4 } from 'uuid';
 

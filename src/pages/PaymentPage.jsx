@@ -17,6 +17,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { getCurrentUser, markUserAsPaid } from '../utils/userStorage';
 import { toast } from 'react-hot-toast';
+import { supabase } from '../utils/supabaseClient';
+
 
 const PaymentPage = () => {
   const navigate = useNavigate();
@@ -48,17 +50,41 @@ const PaymentPage = () => {
     
     // Handle successful payment return
     if (success && currentUser && !paymentProcessed) {
+      console.log('Processing successful payment for user:', currentUser.id);
       handleSuccessfulPayment(currentUser.id);
       setPaymentProcessed(true);
     }
   }, [navigate, success, paymentProcessed]);
+  
+  useEffect(() => {
+    // Check if we're returning from a successful payment
+    const query = new URLSearchParams(location.search);
+    const success = query.get('success');
+    
+    if (success === 'true' && user) {
+      handleSuccessfulPayment(user.id);
+    }
+  }, [location.search, user]);
   
   const handleSuccessfulPayment = async (userId) => {
     setLoading(true);
     
     try {
       // Mark user as paid in Supabase
-      await markUserAsPaid(userId);
+      const { data, error } = await supabase
+        .from('users')
+        .update({ 
+          is_paid: true, 
+          payment_date: new Date().toISOString(),
+          testimonial_limit: 999999 // Unlimited testimonials
+        })
+        .eq('id', userId)
+        .select();
+      
+      if (error) throw error;
+      
+      // Also update local user data if you're using localStorage
+      markUserAsPaid(userId);
       
       // Show success message
       toast.success('Payment successful! You now have access to all premium features.');
@@ -74,8 +100,19 @@ const PaymentPage = () => {
   };
   
   const handlePayment = () => {
-    // Redirect to your Stripe payment link
-    window.location.href = 'https://buy.stripe.com/test_cN2aFwf0Ig2K90IaEH';
+    setLoading(true);
+    
+    try {
+      // For now, directly redirect to your Stripe payment link
+      window.location.href = 'https://buy.stripe.com/test_7sI7tk9Go6sa3Go8wA';
+      
+      // Store that we're in a payment flow (useful for redirects after auth)
+      localStorage.setItem('paymentFlow', 'true');
+    } catch (err) {
+      console.error('Error initiating payment:', err);
+      setError('Failed to initiate payment. Please try again.');
+      setLoading(false);
+    }
   };
   
   // If we're in a loading state after payment

@@ -12,7 +12,8 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { supabase } from '../lib/supabaseClient';
+// import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../utils/supabaseClient';
 
 const VerifyPage = () => {
   const { id } = useParams();

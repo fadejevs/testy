@@ -31,8 +31,8 @@ const CheckoutPage = () => {
   // Plan details
   const planDetails = {
     pro: {
-      name: 'Pro Plan',
-      price: '$29',
+      name: 'Premium Plan',
+      price: '$19',
       period: '/month',
       features: [
         'Unlimited AI-enhanced testimonials',
@@ -49,7 +49,7 @@ const CheckoutPage = () => {
       price: '$99',
       period: '/month',
       features: [
-        'Everything in Pro',
+        'Everything in Premium',
         'Up to 5 team members',
         'Team collaboration tools',
         'Advanced analytics',
